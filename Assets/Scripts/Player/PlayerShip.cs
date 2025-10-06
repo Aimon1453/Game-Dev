@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 
 public class PlayerShip : MonoBehaviour, IDamageable
 {
@@ -13,8 +14,14 @@ public class PlayerShip : MonoBehaviour, IDamageable
 
     [Header("无敌帧")]
     public float invincibilityDuration = 1f; // 无敌时间
-    private bool isInvincible = false;
+    public bool isInvincible = false;
     private float invincibleTimer = 0f;
+
+    [Header("子弹时间")]
+    [SerializeField] private float timeSlowFactor = 0.25f; // 时间减慢到正常的一半
+    [SerializeField] private float timeSlowDuration = 0.5f; // 时间减慢持续时间
+    [SerializeField] private float timeRestoreDuration = 0.3f; // 时间恢复所需时间
+    private bool isTimeSlowed = false;
 
     void Start()
     {
@@ -23,6 +30,7 @@ public class PlayerShip : MonoBehaviour, IDamageable
 
         if (UIManager.Instance != null)
         {
+            UIManager.Instance.RegisterPlayerShip(this);
             UIManager.Instance.UpdateHealthText(currentHealth);
         }
     }
@@ -71,8 +79,54 @@ public class PlayerShip : MonoBehaviour, IDamageable
             currentHealth = 0;
             Die();
         }
+        else
+        {
+            if (!isTimeSlowed)
+            {
+                StartCoroutine(SlowTimeEffect());
+            }
+        }
+
         isInvincible = true;
         invincibleTimer = invincibilityDuration;
+    }
+
+    private IEnumerator SlowTimeEffect()
+    {
+        isTimeSlowed = true;
+
+        // 快速减慢时间
+        float startTime = Time.unscaledTime;
+        float t = 0;
+        float initialTimeScale = Time.timeScale;
+
+        while (t < 0.1f) // 快速减速阶段
+        {
+            t = (Time.unscaledTime - startTime) / 0.1f;
+            Time.timeScale = Mathf.Lerp(initialTimeScale, timeSlowFactor, t);
+            yield return null;
+        }
+
+        // 保持减慢状态
+        Time.timeScale = timeSlowFactor;
+
+        // 等待指定时间
+        yield return new WaitForSecondsRealtime(timeSlowDuration);
+
+        // 逐渐恢复正常时间流速
+        startTime = Time.unscaledTime;
+        t = 0;
+
+        while (t < timeRestoreDuration)
+        {
+            t = (Time.unscaledTime - startTime) / timeRestoreDuration;
+            Time.timeScale = Mathf.Lerp(timeSlowFactor, 1f, t);
+            yield return null;
+        }
+
+        // 确保时间恢复正常
+        Time.timeScale = 1f;
+        isTimeSlowed = false;
     }
 
     public void Die()
@@ -81,9 +135,23 @@ public class PlayerShip : MonoBehaviour, IDamageable
         isDead = true;
         //Debug.Log("似了");
 
+        // 确保死亡时时间恢复正常
+        Time.timeScale = 1f;
+
         if (GameManager.Instance != null)
         {
             GameManager.Instance.EndGame();
         }
+    }
+
+    public float GetCurrentHealth()
+    {
+        return currentHealth;
+    }
+
+    // 在游戏暂停或场景切换时确保时间缩放被重置
+    private void OnDisable()
+    {
+        Time.timeScale = 1f;
     }
 }

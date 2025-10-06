@@ -9,6 +9,7 @@ public class Meteorite : MonoBehaviour, IDamageable
     [Header("生命值")]
     public float maxHealth = 20f;
     private float currentHealth;
+
     [Header("伤害")]
     public float damage = 3f;
 
@@ -17,9 +18,20 @@ public class Meteorite : MonoBehaviour, IDamageable
     public int mineralCount = 3;
     public float mineralSpawnRadius = 0.5f;
 
+    [Header("死亡特效")]
+    public GameObject[] debrisPrefabs;  // 碎片预制体数组
+
+    private MeteoriteVisual visual;
+
     private void Awake()
     {
         currentHealth = maxHealth;
+
+        visual = GetComponentInChildren<MeteoriteVisual>();
+        if (visual == null)
+        {
+            Debug.LogWarning("陨石没有找到视觉子物体!");
+        }
     }
 
     void Update()
@@ -37,7 +49,22 @@ public class Meteorite : MonoBehaviour, IDamageable
         transform.position = new Vector3(position.x, position.y, 0);
         moveDirection = direction.normalized;
         moveSpeed = speed;
+
+        // 重置生命值
+        currentHealth = maxHealth;
+
+        // 随机设置旋转参数
+        if (visual != null)
+        {
+            visual.SetRotationParameters(Random.Range(20f, 60f), Random.value > 0.5f);
+        }
     }
+
+    public float GetHealthPercent()
+    {
+        return currentHealth / maxHealth;
+    }
+
 
     void OnTriggerEnter2D(Collider2D collision)
     {
@@ -69,7 +96,39 @@ public class Meteorite : MonoBehaviour, IDamageable
             GameObject mineral = ObjectPool.Instance.GetObject(mineralPrefab, spawnPosition, Quaternion.identity);
         }
 
+        SpawnDebris();
+
         ObjectPool.Instance.PushObject(gameObject);
+    }
+
+    private void SpawnDebris()
+    {
+        if (debrisPrefabs == null || debrisPrefabs.Length == 0)
+            return;
+
+        Vector3 centerPos = transform.position;
+        float randomAngle = Random.Range(0f, 90f);
+
+        for (int i = 0; i < 4; i++)
+        {
+            // 计算方向
+            float angle = i * 90f + randomAngle;
+            float rad = angle * Mathf.Deg2Rad;
+            Vector2 direction = new Vector2(Mathf.Cos(rad), Mathf.Sin(rad));
+
+            // 选择一个碎片预制体
+            GameObject debrisPrefab = debrisPrefabs[Random.Range(0, debrisPrefabs.Length)];
+            GameObject debris = ObjectPool.Instance.GetObject(debrisPrefab, centerPos, Quaternion.identity);
+
+            // 初始化
+            MeteoriteDebris debrisComponent = debris.GetComponent<MeteoriteDebris>();
+            if (debrisComponent != null)
+            {
+                float speed = Random.Range(3f, 4.5f);
+                float shrinkRate = Random.Range(0.7f, 1.3f);
+                debrisComponent.Initialize(centerPos, direction, speed, shrinkRate);
+            }
+        }
     }
 
     private bool IsOutOfBigRect()

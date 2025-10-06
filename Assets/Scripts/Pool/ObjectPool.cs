@@ -52,7 +52,8 @@ public class ObjectPool : Singleton<ObjectPool>
         }
         obj = objectPool[prefab.name].Dequeue();
 
-        obj.transform.position = position;
+        Vector3 fixedPosition = new Vector3(position.x, position.y, 0f);
+        obj.transform.position = fixedPosition;
         obj.transform.rotation = rotation;
 
         // 再激活

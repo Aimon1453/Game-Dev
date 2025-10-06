@@ -73,6 +73,25 @@ public class AutoTargeting : MonoBehaviour
             laserLine.SetPosition(0, transform.position);
             laserLine.SetPosition(1, currentTarget.position);
 
+            // ===== 动态设置Tiling =====
+            float laserLength = Vector3.Distance(transform.position, currentTarget.position);
+            float texturePixelWidth = 32f; // 你的激光贴图宽度（像素）
+            float pixelsPerUnit = 16f;     // 你的贴图Pixels Per Unit设置
+            float worldTextureWidth = texturePixelWidth / pixelsPerUnit;
+            float tiling = laserLength / worldTextureWidth;
+
+            if (laserLine.material != null)
+            {
+                Vector2 matTiling = laserLine.material.mainTextureScale;
+                matTiling.x = tiling;
+                laserLine.material.mainTextureScale = matTiling;
+
+                // ===== 激光流动感 =====
+                Vector2 offset = laserLine.material.mainTextureOffset;
+                offset.x -= Time.deltaTime * 2f; // 控制流动速度
+                laserLine.material.mainTextureOffset = offset;
+            }
+
             //伤害逻辑部分
             fireTimer -= Time.deltaTime;
             if (fireTimer <= 0f)
@@ -92,6 +111,11 @@ public class AutoTargeting : MonoBehaviour
             // 没有目标时，关闭激光
             laserLine.enabled = false;
         }
+    }
+
+    public bool HasTarget()
+    {
+        return currentTarget != null;
     }
 
     private void OnDrawGizmosSelected()
