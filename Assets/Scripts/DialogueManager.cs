@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
-public class DialogueManager : MonoBehaviour
+public class DialogueManager : Singleton<DialogueManager>
 {
     [Header("Data")]
     public DialogueSequence sequence;
@@ -13,6 +13,7 @@ public class DialogueManager : MonoBehaviour
     public bool splitOnFirstChoiceClick = true;
     public bool splitOnNextClick = false;
     public bool splitOnNodeEnter = false;
+    public MinigameManager minigame;
 
     [Header("UI")]
     public Image   portraitImage;
@@ -41,7 +42,14 @@ public class DialogueManager : MonoBehaviour
     void Start()
     {
         // 开场全屏
-        if (lerper != null) lerper.SetupFullScreen();
+        if (lerper != null)
+        {
+            lerper.SetupFullScreen();
+            // 监听“分屏完成”，再生成小游戏
+            lerper.onSplitCompleted -= OnSplitCompleted;
+            lerper.onSplitCompleted += OnSplitCompleted;
+        }
+
 
         if (sequence == null || sequence.nodes == null || sequence.nodes.Count == 0)
         {
@@ -53,6 +61,8 @@ public class DialogueManager : MonoBehaviour
         SetUIActive(true);
         ShowNode(0);
     }
+
+    
 
     void SetUIActive(bool active)
     {
@@ -72,12 +82,33 @@ public class DialogueManager : MonoBehaviour
         spawnedChoices.Clear();
     }
 
+    void OnSplitCompleted()
+    {
+        if (minigame != null) minigame.InitIfNeeded();
+    }
+
     public void TriggerSplitOnce()
     {
-        if (didSplit || lerper == null) return;
-        didSplit = true;
-        lerper.ToSplitScreen();
+        if (didSplit || lerper == null)
+        {
+            Debug.LogWarning("[DialogueManager] TriggerSplitOnce 未执行 —— lerper 为空或已分屏过。");
+            return;
+        }
 
+        didSplit = true;
+        Debug.Log("[DialogueManager] TriggerSplitOnce 被调用 —— 准备执行分屏动画。");
+        // 订阅一次“分屏完成”，在回调里初始化小游戏
+        if (minigame != null)
+        {
+            Debug.Log("[DialogueManager] 📡 绑定分屏完成回调 -> MinigameManager.InitIfNeeded()");
+            lerper.onSplitCompleted -= minigame.InitIfNeeded; // 防重复
+            lerper.onSplitCompleted += minigame.InitIfNeeded;
+        }
+        else
+        {
+            Debug.LogWarning("[DialogueManager] ⚠️ minigameManager 未绑定！");
+        }
+        lerper.ToSplitScreen();
         // 分屏动画结束后切到 Bottom Stretch（让宽度随左侧面板）
         StartCoroutine(ApplyLeftLayoutAfterSplit());
     }
