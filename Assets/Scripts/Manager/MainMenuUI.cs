@@ -4,7 +4,7 @@ using TMPro;
 
 public class MainMenuUI : MonoBehaviour
 {
-    public TextMeshProUGUI totalMineralsText;
+    //public TextMeshProUGUI totalMineralsText;
 
     void Start()
     {
@@ -19,9 +19,9 @@ public class MainMenuUI : MonoBehaviour
     public void UpdateTotalMineralsText()
     {
         int totalMinerals = PlayerPrefs.GetInt("TotalMinerals", 0);
-        if (totalMineralsText != null)
-        {
-            totalMineralsText.text = "Mineral: " + totalMinerals.ToString();
-        }
+        //if (totalMineralsText != null)
+        //{
+        //    totalMineralsText.text = "Mineral: " + totalMinerals.ToString();
+        //}
     }
 }

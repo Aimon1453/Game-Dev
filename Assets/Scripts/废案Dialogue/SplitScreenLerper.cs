@@ -7,7 +7,7 @@ public class SplitScreenLerper : MonoBehaviour
     [Header("Refs")]
     public RectTransform dialoguePanel;
     public RectTransform minigamePanel;
-    public CanvasGroup   minigameCg; // 可选：淡入
+    public CanvasGroup minigameCg; // 可选：淡入
 
     [Header("Layout")]
     [Range(0f, 1f)] public float dialogueWidthPercent = 0.45f;
@@ -38,10 +38,10 @@ public class SplitScreenLerper : MonoBehaviour
     {
         if (!isActiveAndEnabled)
         {
-            Debug.LogWarning("[SplitScreenLerper]  脚本未启用，无法执行分屏。");
+            //Debug.LogWarning("[SplitScreenLerper]  脚本未启用，无法执行分屏。");
             return;
         }
-        Debug.Log("[SplitScreenLerper]  ToSplitScreen() 被调用 —— 开始执行动画。");
+        //Debug.Log("[SplitScreenLerper]  ToSplitScreen() 被调用 —— 开始执行动画。");
         StopAllCoroutines();
         StartCoroutine(LerpSplitOnly());
     }
@@ -50,11 +50,11 @@ public class SplitScreenLerper : MonoBehaviour
     {
         if (!dialoguePanel || !minigamePanel)
         {
-            Debug.LogError("[SplitScreenLerper]  dialoguePanel 或 minigamePanel 未绑定！");
+            //Debug.LogError("[SplitScreenLerper]  dialoguePanel 或 minigamePanel 未绑定！");
             yield break;
         }
 
-        Debug.Log("[SplitScreenLerper] 分屏动画开始...");
+        //Debug.Log("[SplitScreenLerper] 分屏动画开始...");
         float t = 0f;
         float start = 1f;
         float target = Mathf.Clamp01(dialogueWidthPercent); // 例如 0.45
@@ -75,13 +75,13 @@ public class SplitScreenLerper : MonoBehaviour
         }
 
         // 终值再“落锚”一次，防数值漂移
-        SetAnchors(dialoguePanel,  new Vector2(0f, 0f), new Vector2(target, 1f));
-        SetAnchors(minigamePanel,  new Vector2(target, 0f), new Vector2(1f, 1f));
+        SetAnchors(dialoguePanel, new Vector2(0f, 0f), new Vector2(target, 1f));
+        SetAnchors(minigamePanel, new Vector2(target, 0f), new Vector2(1f, 1f));
 
         if (minigameCg) minigameCg.blocksRaycasts = true;
-        Debug.Log("[SplitScreenLerper] ✅ 分屏动画完成。执行回调...");
+        //Debug.Log("[SplitScreenLerper] ✅ 分屏动画完成。执行回调...");
         onSplitCompleted?.Invoke();
-        Debug.Log("[SplitScreenLerper] 🔁 onSplitCompleted.Invoke() 调用完成。");
+        //Debug.Log("[SplitScreenLerper] 🔁 onSplitCompleted.Invoke() 调用完成。");
     }
 
     void SetAnchors(RectTransform rt, Vector2 min, Vector2 max)

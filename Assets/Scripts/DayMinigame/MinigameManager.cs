@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-public class MinigameManager :  Singleton<MinigameManager>
+public class MinigameManager : Singleton<MinigameManager>
 {
     [Header("Level & UI")]
     public LevelSO level;
@@ -25,7 +25,7 @@ public class MinigameManager :  Singleton<MinigameManager>
     // ----- Walls Visuals -----
     [Header("Walls Visuals")]
     public Transform wallsParent;        // 建个空物体：Canvas/Board 下的 Walls
-    public Color wallColor = new Color(0.15f,0.2f,0.3f,1f);
+    public Color wallColor = new Color(0.15f, 0.2f, 0.3f, 1f);
     public float wallThickness = 8f;     // UI像素宽度
 
 
@@ -81,14 +81,16 @@ public class MinigameManager :  Singleton<MinigameManager>
         Debug.Log("[MinigameManager] BuildLevel() 执行完毕 —— 游戏应该已生成节点。");
     }
 
-    void StretchFull(RectTransform rt) {
+    void StretchFull(RectTransform rt)
+    {
         rt.anchorMin = Vector2.zero;
         rt.anchorMax = Vector2.one;
         rt.offsetMin = Vector2.zero;
         rt.offsetMax = Vector2.zero;
     }
 
-    void BuildLevel(){
+    void BuildLevel()
+    {
 
         Debug.Log("[MinigameManager]  BuildLevel() 开始执行。");
         // 清空旧物
@@ -99,36 +101,36 @@ public class MinigameManager :  Singleton<MinigameManager>
         wallSet = new HashSet<EdgeCoord>(level.walls);
 
         // 清理旧墙体
-    if (wallsParent != null)
-    {
-        foreach (Transform t in wallsParent) Destroy(t.gameObject);
-
-        // 逐条墙（被禁用边）生成一条UI矩形
-        foreach (var e in level.walls)
+        if (wallsParent != null)
         {
-            var go = new GameObject("Wall", typeof(RectTransform), typeof(UnityEngine.UI.Image));
-            go.transform.SetParent(wallsParent, false);
-            var img = go.GetComponent<UnityEngine.UI.Image>();
-            img.color = wallColor;
+            foreach (Transform t in wallsParent) Destroy(t.gameObject);
 
-            var rt = go.GetComponent<RectTransform>();
-            Vector3 a = NodeToWorld(e.a);
-            Vector3 b = NodeToWorld(e.b);
-            Vector3 midWorld = (a + b) * 0.5f;
+            // 逐条墙（被禁用边）生成一条UI矩形
+            foreach (var e in level.walls)
+            {
+                var go = new GameObject("Wall", typeof(RectTransform), typeof(UnityEngine.UI.Image));
+                go.transform.SetParent(wallsParent, false);
+                var img = go.GetComponent<UnityEngine.UI.Image>();
+                img.color = wallColor;
 
-            // 转到 Board 的局部坐标
-            Vector2 midLocal = (Vector2)board.InverseTransformPoint(midWorld);
-            rt.anchoredPosition = midLocal;
+                var rt = go.GetComponent<RectTransform>();
+                Vector3 a = NodeToWorld(e.a);
+                Vector3 b = NodeToWorld(e.b);
+                Vector3 midWorld = (a + b) * 0.5f;
 
-            float len = Vector2.Distance(board.InverseTransformPoint(a), board.InverseTransformPoint(b));
-            rt.sizeDelta = new Vector2(len, wallThickness);
+                // 转到 Board 的局部坐标
+                Vector2 midLocal = (Vector2)board.InverseTransformPoint(midWorld);
+                rt.anchoredPosition = midLocal;
 
-            // 旋转到边方向
-            Vector2 dir = (board.InverseTransformPoint(b) - board.InverseTransformPoint(a)).normalized;
-            float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
-            rt.localRotation = Quaternion.Euler(0, 0, angle);
+                float len = Vector2.Distance(board.InverseTransformPoint(a), board.InverseTransformPoint(b));
+                rt.sizeDelta = new Vector2(len, wallThickness);
+
+                // 旋转到边方向
+                Vector2 dir = (board.InverseTransformPoint(b) - board.InverseTransformPoint(a)).normalized;
+                float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
+                rt.localRotation = Quaternion.Euler(0, 0, angle);
+            }
         }
-    }
 
         // 有序索引表
         orderedIndex.Clear();
@@ -138,19 +140,19 @@ public class MinigameManager :  Singleton<MinigameManager>
         // 生成节点视图
         views = new NodeView[level.rows, level.cols];
         for (int r = 0; r < level.rows; r++)
-        for (int c = 0; c < level.cols; c++)
-        {
-            var go = Instantiate(nodeViewPrefab, nodesParent);
-            var v = go.GetComponent<NodeView>();
-            bool isOrdered = orderedIndex.TryGetValue(new NodeCoord(r, c), out int idx);
-            v.Setup(isOrdered, isOrdered ? idx : -1, isOrdered ? orderedColor : nodeColor);
+            for (int c = 0; c < level.cols; c++)
+            {
+                var go = Instantiate(nodeViewPrefab, nodesParent);
+                var v = go.GetComponent<NodeView>();
+                bool isOrdered = orderedIndex.TryGetValue(new NodeCoord(r, c), out int idx);
+                v.Setup(isOrdered, isOrdered ? idx : -1, isOrdered ? orderedColor : nodeColor);
 
-            // 定位
-            var rt = (RectTransform)go.transform;
-            rt.anchoredPosition = GridToLocal(new NodeCoord(r, c));
+                // 定位
+                var rt = (RectTransform)go.transform;
+                rt.anchoredPosition = GridToLocal(new NodeCoord(r, c));
 
-            views[r, c] = v;
-        }
+                views[r, c] = v;
+            }
 
         // 新建线
         line = Instantiate(linePrefab, linesParent);
@@ -213,17 +215,17 @@ public class MinigameManager :  Singleton<MinigameManager>
 
         // 2) 遍历所有节点，比较“本地坐标”距离
         for (int r = 0; r < level.rows; r++)
-        for (int c = 0; c < level.cols; c++)
-        {
-            var n = new NodeCoord(r, c);
-            Vector2 nodeLocal = GridToLocal(n);           // 你已有：节点 -> Board本地
-            float d = Vector2.Distance(mouseLocal, nodeLocal);
-            if (d < best && d <= snapLocalRadius)
+            for (int c = 0; c < level.cols; c++)
             {
-                best = d;
-                nearest = n;
+                var n = new NodeCoord(r, c);
+                Vector2 nodeLocal = GridToLocal(n);           // 你已有：节点 -> Board本地
+                float d = Vector2.Distance(mouseLocal, nodeLocal);
+                if (d < best && d <= snapLocalRadius)
+                {
+                    best = d;
+                    nearest = n;
+                }
             }
-        }
         return best < float.MaxValue;
     }
 
@@ -269,18 +271,18 @@ public class MinigameManager :  Singleton<MinigameManager>
         nextOrdered = 0;
 
         PushNode(start);
-        
+
         // if (level.orderedNodes.Count > 0 && orderedIndex.TryGetValue(start, out int sIdx) && nsIdx != 0)
         // {
         //     dragging = false;   // 直接取消，本次不允许开始
         //     return;
         // }
-    // 如果起点本身就是有序点，消耗掉它
+        // 如果起点本身就是有序点，消耗掉它
         if (orderedIndex.TryGetValue(start, out int sIdx))
             nextOrdered = sIdx + 1;
     }
 
-    
+
     // —— 输入循环 —— //
     void Update()
     {
@@ -298,7 +300,7 @@ public class MinigameManager :  Singleton<MinigameManager>
 
         // 重置：R 键
         if (Input.GetKeyDown(KeyCode.R))
-        ResetLevel();
+            ResetLevel();
 
         // 开始拖拽
         if (Input.GetMouseButtonDown(0) && !pathCommitted)
@@ -353,9 +355,9 @@ public class MinigameManager :  Singleton<MinigameManager>
                     if (orderedIndex.ContainsKey(next)) nextOrdered++;
 
                     // 胜利判定：全覆盖 + 有序完成 + 终点就是最后一个有序点
-                    bool allVisited  = visited.Count == level.rows * level.cols;
-                    bool allOrdered  = nextOrdered == level.orderedNodes.Count;
-                    bool endOnLast   = level.orderedNodes.Count == 0
+                    bool allVisited = visited.Count == level.rows * level.cols;
+                    bool allOrdered = nextOrdered == level.orderedNodes.Count;
+                    bool endOnLast = level.orderedNodes.Count == 0
                                     || (orderedIndex.TryGetValue(next, out int idx) && idx == level.orderedNodes.Count - 1);
 
                     if (allVisited && allOrdered && endOnLast)
