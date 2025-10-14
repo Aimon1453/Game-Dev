@@ -17,6 +17,10 @@ public class StoryManager : Singleton<StoryManager>
     [Header("开始hacker游戏的按钮")]
     [SerializeField] private Button StartButton; // 开始按钮
 
+    [Header("Minigame")]
+    [SerializeField] private MinigameManager minigame;   // 拖场景中的 MinigameManager
+    [SerializeField] private bool buildMinigameOnDayStart = true; // 进当天剧情就生成小游戏
+
     void Update()
     {
         if (Input.GetKeyDown(KeyCode.Space))
@@ -40,6 +44,13 @@ public class StoryManager : Singleton<StoryManager>
             case 4: currentDayDialogue = day4Dialogues; break;
             case 5: currentDayDialogue = day5Dialogues; break;
             default: currentDayDialogue = day0Dialogues; break;
+        }
+
+        // 进入剧情时，生成接线小游戏
+        if (buildMinigameOnDayStart && minigame != null)
+        {
+            minigame.InitIfNeeded(); 
+            minigame.gameObject.SetActive(true);
         }
 
         if (currentDayDialogue.Count > 0)

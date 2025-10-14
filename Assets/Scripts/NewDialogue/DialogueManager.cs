@@ -17,6 +17,8 @@ public class DialogueManager : Singleton<DialogueManager>
     [SerializeField] private GameObject choiceButtonPrefab; // 选择按钮预制体
 
     [SerializeField] private GameObject dayGamePanel; // 小游戏panel
+    [SerializeField] private MinigameManager minigame;  // MinigameManager
+    private bool waitingMinigame = false;              // 标志：是否正在等待小游戏结果
     [SerializeField] private Button normalButton; // 结局1
     [SerializeField] private Button excellentButton; // 结局2
 
@@ -141,12 +143,38 @@ public class DialogueManager : Singleton<DialogueManager>
             DisplayChoices();
         }
 
+        // // 检查是否要显示小游戏面板
+        // if (currentDialogue.minigameData != null &&
+        //     currentLineIndex == currentDialogue.specificLineIndex)
+        // {
+        //     continueButton.gameObject.SetActive(false); // 隐藏继续按钮
+        //     StartCoroutine(SlideDayGamePanelIn());
+        // }
         // 检查是否要显示小游戏面板
         if (currentDialogue.minigameData != null &&
             currentLineIndex == currentDialogue.specificLineIndex)
         {
-            continueButton.gameObject.SetActive(false); // 隐藏继续按钮
-            StartCoroutine(SlideDayGamePanelIn());
+            continueButton.gameObject.SetActive(false); // 隐藏“继续”按钮
+
+            // 订阅小游戏结束事件
+            if (minigame != null)
+            {
+                minigame.OnFinished -= HandleMinigameFinished;
+                minigame.OnFinished += HandleMinigameFinished;
+
+                waitingMinigame = true;
+
+                // 打开小游戏面板动画
+                StartCoroutine(SlideDayGamePanelIn());
+
+                // 初始化并开始小游戏
+                minigame.gameObject.SetActive(true);
+                minigame.InitIfNeeded();
+            }
+            else
+            {
+                Debug.LogWarning("[DialogueManager] Minigame 未绑定！");
+            }
         }
     }
 
@@ -205,6 +233,8 @@ public class DialogueManager : Singleton<DialogueManager>
     // dayGamePanel滑入动画
     private IEnumerator SlideDayGamePanelIn()
     {
+
+        
         RectTransform rt = dayGamePanel.GetComponent<RectTransform>();
         Vector2 startPos = rt.anchoredPosition;
         Vector2 endPos = new Vector2(70, startPos.y);
@@ -308,6 +338,24 @@ public class DialogueManager : Singleton<DialogueManager>
         rootPanel.SetActive(false);
     }
 
+    // 收到小游戏结果（true=连到bonus节点，false=普通）
+    private void HandleMinigameFinished(bool reachedBonus)
+    {
+        if (!waitingMinigame) return;
+        waitingMinigame = false;
+
+        Debug.Log($"[DialogueManager] 收到小游戏结果：{reachedBonus}");
+
+        // 停止监听（避免重复）
+        minigame.OnFinished -= HandleMinigameFinished;
+
+        // 根据结果决定分支 0=普通 1=优秀
+        int resultIndex = reachedBonus ? 1 : 0;
+
+        // 调用原本已有的滑出动画并进入分支
+        MinigameManager.Instance?.HideAndClear();
+        StartCoroutine(SlideDayGamePanelOut(resultIndex));
+    }
 
 
     /// <summary>

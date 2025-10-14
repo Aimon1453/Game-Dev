@@ -41,6 +41,11 @@ public class MinigameManager : Singleton<MinigameManager>
 
     bool _built = false;
 
+    public event System.Action<bool> OnFinished;
+    private bool bonusVisited = false;   // 本轮是否踩过 Bonus 节点
+
+    private bool _active = false;   // 面板可交互/运行的开关
+
     // 线状态
     bool pathCommitted = false;     // 松手后锁定本轮，禁止再开新线
 
@@ -55,7 +60,7 @@ public class MinigameManager : Singleton<MinigameManager>
             Debug.LogError("MinigameManager: Inspector 引用未绑定完整。");
             enabled = false; return;
         }
-        // BuildLevel();
+        //BuildLevel();
 
         foreach (Transform t in nodesParent) Destroy(t.gameObject);
         foreach (Transform t in linesParent) Destroy(t.gameObject);
@@ -75,6 +80,7 @@ public class MinigameManager : Singleton<MinigameManager>
         StretchFull(board);
         BuildLevel();
         _built = true;
+        _active = true;
         // 保险：可见&可交互
         board.gameObject.SetActive(true);
         if (canvas != null) canvas.enabled = true;
@@ -171,6 +177,7 @@ public class MinigameManager : Singleton<MinigameManager>
         path.Clear();
         nextOrdered = 0;
         dragging = false;
+        bonusVisited = false;
     }
 
     // 将网格坐标 → board 本地坐标（UI）
@@ -362,6 +369,8 @@ public class MinigameManager : Singleton<MinigameManager>
 
                     if (allVisited && allOrdered && endOnLast)
                     {
+                        bonusVisited = true;
+                        OnFinished?.Invoke(bonusVisited);
                         Debug.Log("ALL Clear!");
                         pathCommitted = true;            // 松手即提交（如果想“非胜利不提交”，把这一行移到 Win 判定里）
                         CommitPath(); // 提交并锁定
@@ -409,6 +418,27 @@ public class MinigameManager : Singleton<MinigameManager>
         dragging = false;
         line.positionCount = path.Count;
         pathCommitted = true; // 锁定，禁止再开新线
+    }
+    // 新增：退场时调用（在 DialogueManager 的 panel 滑出协程结束后调）
+    public void HideAndClear()
+    {
+        // 停止交互循环
+        _active = false;
+        dragging = false;
+        pathCommitted = false;
+
+        // 清掉路径与访问标记
+        path.Clear();
+        visited.Clear();
+        bonusVisited = false;
+
+        // 安全销毁线段
+        if (line != null)
+        {
+            Destroy(line.gameObject);
+            line = null;
+        }
+        foreach (Transform t in linesParent) Destroy(t.gameObject);
     }
 
     public void ResetLevel()
