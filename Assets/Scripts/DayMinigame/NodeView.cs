@@ -1,32 +1,65 @@
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro;
 
 public class NodeView : MonoBehaviour
 {
     [Header("Refs")]
-    public Image dot;          // 一个圆点图（Image）
-    public TMP_Text label;     // 显示编号（可选）
+    public Image icon;  // 放节点图片（UI Image）
 
-    [Header("States")]
-    public bool isOrdered;
-    public int orderIndex = -1;
+    [Header("Sprites (by type)")]
+    public Sprite startSprite;
+    public Sprite endSprite;
+    public Sprite normalSprite;
+    public Sprite bonusASprite;
+    public Sprite bonusBSprite;
+    public Sprite bonusCSprite;
 
-    public void Setup(bool ordered, int index, Color baseColor)
+    [Header("Visited Appearance")]
+    public Sprite visitedSprite; // 统一的“被连接后”外观
+
+    private NodeType _type;
+    private bool _visited;
+
+    /// <summary>
+    /// 初始外观：根据类型设置
+    /// </summary>
+    public void Setup(NodeType type)
     {
-        isOrdered = ordered; orderIndex = index;
-        if (label) label.text = ordered ? (index + 1).ToString() : "";
-        if (dot)
+        _type = type;
+        _visited = false;
+        ApplyUnvisitedSprite();
+    }
+
+    /// <summary>
+    /// 进入/离开路径后的外观切换
+    /// </summary>
+    public void SetVisited(bool on)
+    {
+        _visited = on;
+        if (icon == null) return;
+
+        if (_visited)
         {
-            baseColor.a = 1f;         // 强制不透明
-            dot.color = baseColor;    // 节点基础色
+            if (visitedSprite) icon.sprite = visitedSprite;
+        }
+        else
+        {
+            ApplyUnvisitedSprite();
         }
     }
 
-    public void SetVisited(bool visited)
+    private void ApplyUnvisitedSprite()
     {
-        if (!dot) return;
-        var c = dot.color;
-        dot.color = visited ? Color.white : c;   // 访问后变白（你可改成发光）
+        if (icon == null) return;
+
+        switch (_type)
+        {
+            case NodeType.Start:   icon.sprite = startSprite;   break;
+            case NodeType.End:     icon.sprite = endSprite;     break;
+            case NodeType.BonusA:  icon.sprite = bonusASprite;  break;
+            case NodeType.BonusB:  icon.sprite = bonusBSprite;  break;
+            case NodeType.BonusC:  icon.sprite = bonusCSprite;  break;
+            default:               icon.sprite = normalSprite;  break;
+        }
     }
 }
