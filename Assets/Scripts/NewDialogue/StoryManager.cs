@@ -80,4 +80,6 @@ public class StoryManager : Singleton<StoryManager>
             DialogueManager.Instance.StartDialogue(GetNextDialogue());
         }
     }
+
+    
 }

@@ -14,11 +14,12 @@ public class DialogueManager : Singleton<DialogueManager>
     [SerializeField] private TextMeshProUGUI dialogueText; 
     [SerializeField] private Button continueButton; 
     [SerializeField] private GameObject choicesPanel; 
-    [SerializeField] private GameObject choiceButtonPrefab; 
+    [SerializeField] private GameObject choiceButtonPrefab;
 
     [SerializeField] private GameObject dayGamePanel;   // 小游戏panel（只显示UI，不连逻辑）
-    [SerializeField] private Button normalButton;       // 结果：普通
-    [SerializeField] private Button excellentButton;    // 结果：优秀
+    [SerializeField] private MinigameManager minigame;  // 场景里的 MinigameManager
+    // [SerializeField] private Button normalButton;       // 结果：普通
+    // [SerializeField] private Button excellentButton;    // 结果：优秀
 
     [Header("打字机效果")]
     [SerializeField] private float typingSpeed = 0.05f;
@@ -37,16 +38,16 @@ public class DialogueManager : Singleton<DialogueManager>
         choicesPanel.SetActive(false);
         rootPanel.SetActive(false);
 
-        // 仅测试：直接用两个按钮决定分支
-        if (normalButton)    normalButton.onClick.AddListener(() => OnMinigameResult(0));
-        if (excellentButton) excellentButton.onClick.AddListener(() => OnMinigameResult(1));
+        // // 仅测试：直接用两个按钮决定分支
+        // if (normalButton)    normalButton.onClick.AddListener(() => OnMinigameResult(0));
+        // if (excellentButton) excellentButton.onClick.AddListener(() => OnMinigameResult(1));
     }
 
     void Update()
     {
-        // 快速测试：键盘直接给结果
-        if (Input.GetKeyDown(KeyCode.N)) OnMinigameResult(0); // normal
-        if (Input.GetKeyDown(KeyCode.E)) OnMinigameResult(1); // excellent
+        // // 快速测试：键盘直接给结果
+        // if (Input.GetKeyDown(KeyCode.N)) OnMinigameResult(0); // normal
+        // if (Input.GetKeyDown(KeyCode.E)) OnMinigameResult(1); // excellent
     }
 
     // 开始对话
@@ -143,17 +144,92 @@ public class DialogueManager : Singleton<DialogueManager>
             DisplayChoices();
         }
 
-        // —— 测试版：到“小游戏触发行”时，只拉出右侧面板，不绑定 Minigame —— //
+        // —— 触发小游戏 —— //
         if (currentDialogue.minigameData != null &&
             currentLineIndex == currentDialogue.specificLineIndex)
         {
-            continueButton.gameObject.SetActive(false); // 隐藏“继续”
+            Debug.Log($"[Dialogue] Hit minigame trigger. line={currentLineIndex}, specific={currentDialogue.specificLineIndex}, hasData={(currentDialogue.minigameData!=null)}");
+
+            continueButton.gameObject.SetActive(false);
+
             if (dayGamePanel != null)
             {
                 dayGamePanel.SetActive(true);
-                StartCoroutine(SlideDayGamePanelIn());
+                dayGamePanel.transform.SetAsLastSibling(); // 确保在最上层
+                StartCoroutine(SlideDayGamePanelIn());    // 见下面“步骤2”的改法
+            }
+            else
+            {
+                Debug.LogWarning("[Dialogue] dayGamePanel is null");
+            }
+
+            // 初始化小游戏（与滑入无关，但保留）
+            if (MinigameManager.Instance != null)
+            {
+                MinigameManager.Instance.OnFinished -= HandleMinigameFinished;
+                MinigameManager.Instance.OnFinished += HandleMinigameFinished;
+
+                MinigameManager.Instance.gameObject.SetActive(true);
+                MinigameManager.Instance.InitIfNeeded();
+                Debug.Log("[Dialogue] Minigame inited.");
+            }
+            else
+            {
+                Debug.LogWarning("[Dialogue] MinigameManager.Instance is null");
             }
         }
+        else
+        {
+            Debug.Log($"[Dialogue] Not trigger: line={currentLineIndex}, specific={currentDialogue.specificLineIndex}, hasData={(currentDialogue.minigameData!=null)}");
+        }
+    }
+
+    // 收到小游戏三元组（A,B,C）后直接退场并继续
+    private void HandleMinigameFinished(int countA, int countB, int countC)
+    {
+        Debug.Log($"[Dialogue] Minigame finished: A={countA}, B={countB}, C={countC}");
+
+        // 防重复订阅
+        if (MinigameManager.Instance != null)
+            MinigameManager.Instance.OnFinished -= HandleMinigameFinished;
+
+        // 退场后继续
+        // MinigameManager.Instance?.HideAndClear();
+        StartCoroutine(SlideDayGamePanelOut_ThenNextSkippingChoiceTags());
+    }
+
+    private System.Collections.IEnumerator SlideDayGamePanelOut_ThenNextSkippingChoiceTags()
+    {
+        if (dayGamePanel != null)
+        {
+            RectTransform rt = dayGamePanel.GetComponent<RectTransform>();
+            Vector2 startPos = rt.anchoredPosition;
+            Vector2 endPos   = new Vector2(250, startPos.y);
+            float duration = 0.5f, t = 0f;
+
+            while (t < duration)
+            {
+                t += Time.deltaTime;
+                rt.anchoredPosition = Vector2.Lerp(startPos, endPos, t / duration);
+                yield return null;
+            }
+            rt.anchoredPosition = endPos;
+            dayGamePanel.SetActive(false);
+        }
+
+        // 跳过连续的分支标签（如 "choice_0", "choice_1"...）
+        int next = currentLineIndex + 1;
+        while (next < currentDialogue.dialogueLines.Length &&
+            currentDialogue.dialogueLines[next] != null &&
+            currentDialogue.dialogueLines[next].StartsWith("choice_"))
+        {
+            next++;
+        }
+
+        // 继续对白
+        continueButton.gameObject.SetActive(true);
+        currentLineIndex = next;
+        DisplayCurrentLine();
     }
 
     // 右侧选项

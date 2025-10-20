@@ -27,11 +27,22 @@ public class MinigameManager : Singleton<MinigameManager>
     public Canvas canvas;
 
     [Header("Line")]
-    public LineRenderer linePrefab;
-    public Transform   linesParent;
+    // public LineRenderer linePrefab;
+    // public Transform   linesParent;
     public float snapPixelRadius = 40f;
     public float margin          = 80f;
-    public Color lineColor       = Color.white;
+    public Color lineColor = Color.white;
+    
+    // New Line
+    [Header("UI Line (instead of LineRenderer)")]
+    public Sprite lineSprite;        // 拖入线段美术
+    public float  lineThickness = 8; // UI像素厚度
+    public Transform linesParent;    // 已有：Board 下的 Lines
+
+    // 运行时(New Line)
+    readonly List<RectTransform> _segments = new();  // 当前已画的线段
+    readonly Stack<RectTransform> _pool = new();     // 复用池
+    RectTransform _preview;                           // 预览线段（鼠标/手指悬停时）    
 
     // 运行时
     NodeView[,] views;
@@ -50,7 +61,7 @@ public class MinigameManager : Singleton<MinigameManager>
 
     void Start()
     {
-        if (!level || !board || !nodeViewPrefab || !linePrefab || !linesParent || !nodesParent)
+        if (!level || !board || !nodeViewPrefab || !linesParent || !nodesParent)
         {
             Debug.LogError("[Minigame] Inspector 引用未绑定完整。");
             enabled = false; return;
@@ -80,7 +91,9 @@ public class MinigameManager : Singleton<MinigameManager>
         // 清空旧物
         foreach (Transform t in nodesParent) Destroy(t.gameObject);
         foreach (Transform t in linesParent) Destroy(t.gameObject);
-        views    = new NodeView[level.rows, level.cols];
+        _segments.Clear(); _pool.Clear();
+
+        views = new NodeView[level.rows, level.cols];
         path.Clear(); visited.Clear(); usedEdges.Clear();
         countA = countB = countC = 0;
 
@@ -94,24 +107,10 @@ public class MinigameManager : Singleton<MinigameManager>
 
             v.Setup(level.GetNodeType(n));
             ((RectTransform)go.transform).anchoredPosition = GridToLocal(n);
-            views[r,c] = v;
+            views[r, c] = v;
         }
 
-        // 新建线
-        line = Instantiate(linePrefab, linesParent);
-        line.positionCount = 0;
-        line.useWorldSpace = true;
-        line.sortingLayerName = "UI";
-        line.sortingOrder     = 10;
-
-        var g = new Gradient();
-        g.SetKeys(
-            new[] { new GradientColorKey(lineColor, 0f), new GradientColorKey(lineColor, 1f) },
-            new[] { new GradientAlphaKey(1f, 0f),         new GradientAlphaKey(1f, 1f) }
-        );
-        line.colorGradient = g;
-
-        Debug.Log("[Minigame] Build ok.");
+        Debug.Log("[Minigame] Build ok (UI lines).");
     }
 
     // —— 输入 —— //
@@ -206,10 +205,25 @@ public class MinigameManager : Singleton<MinigameManager>
     void Push(NodeCoord n)
     {
         // 记录边（从第二个点开始）
+        // if (path.Count > 0)
+        // {
+        //     var e = new UEdge(path[path.Count - 1], n);
+        //     usedEdges.Add(e);
+        // }
+
+        // path.Add(n);
+        // visited.Add(n);
+        // views[n.r, n.c].SetVisited(true);
+        // 画一段 from prev -> n
         if (path.Count > 0)
         {
             var e = new UEdge(path[path.Count - 1], n);
-            usedEdges.Add(e);
+            var prev = path[path.Count - 1];
+            var seg = GetSeg();
+            var a = GridToLocal(prev);
+            var b = GridToLocal(n);
+            PlaceSegment(seg, a, b);
+            _segments.Add(seg);
         }
 
         path.Add(n);
@@ -223,10 +237,35 @@ public class MinigameManager : Singleton<MinigameManager>
             case NodeType.BonusB: countB++; break;
             case NodeType.BonusC: countC++; break;
         }
+    }
 
-        // 画线
-        line.positionCount = path.Count;
-        line.SetPosition(path.Count - 1, NodeToWorld(n));
+    // 新的线段
+    RectTransform GetSeg()
+    {
+        if (_pool.Count > 0)
+        {
+            var reused = _pool.Pop();
+            reused.gameObject.SetActive(true);
+            return reused;
+        }
+
+        var go = new GameObject("LineSeg", typeof(RectTransform), typeof(UnityEngine.UI.Image));
+        go.transform.SetParent(linesParent, false);
+        var img = go.GetComponent<UnityEngine.UI.Image>();
+        img.sprite = lineSprite;
+        img.type   = UnityEngine.UI.Image.Type.Sliced; // 9-slice
+
+        var segRT = go.GetComponent<RectTransform>();
+        segRT.pivot = new Vector2(0.5f, 0.5f);
+        return segRT;
+    }
+
+    void ReleaseSeg(RectTransform rt)
+    {
+        if (!rt) return;
+        rt.gameObject.SetActive(false);
+        rt.SetParent(linesParent, false);
+        _pool.Push(rt);
     }
 
     void FinishAndReport()
@@ -237,6 +276,20 @@ public class MinigameManager : Singleton<MinigameManager>
         _built = false;
     }
 
+    void PlaceSegment(RectTransform seg, Vector2 aLocal, Vector2 bLocal)
+    {
+        // aLocal / bLocal：Board 的本地坐标
+        Vector2 mid = (aLocal + bLocal) * 0.5f;
+        Vector2 dir = (bLocal - aLocal);
+        float len = dir.magnitude;
+        float ang = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
+
+        seg.SetParent(linesParent, false);
+        seg.anchoredPosition = mid;
+        seg.sizeDelta = new Vector2(len, lineThickness);
+        seg.localRotation = Quaternion.Euler(0,0,ang);
+    }
+
     public void ResetLevel()
     {
         path.Clear(); visited.Clear(); usedEdges.Clear();
@@ -244,19 +297,24 @@ public class MinigameManager : Singleton<MinigameManager>
 
         // 复位外观
         for (int r = 0; r < level.rows; r++)
-        for (int c = 0; c < level.cols; c++)
-            if (views[r, c]) views[r, c].SetVisited(false);
+            for (int c = 0; c < level.cols; c++)
+                if (views[r, c]) views[r, c].SetVisited(false);
 
         // 清线
-        if (line) Destroy(line.gameObject);
-        foreach (Transform t in linesParent) Destroy(t.gameObject);
+        // if (line) Destroy(line.gameObject);
+        // foreach (Transform t in linesParent) Destroy(t.gameObject);
+        foreach (var s in _segments) ReleaseSeg(s);
+        _segments.Clear();
 
-        // 新线
-        line = Instantiate(linePrefab, linesParent);
-        line.positionCount = 0;
-        line.useWorldSpace = true;
-        line.sortingLayerName = "UI";
-        line.sortingOrder     = 10;
+        // 预览线段也隐藏
+        if (_preview) ReleaseSeg(_preview);
+        _preview = null;
+
+        // line = Instantiate(linePrefab, linesParent);
+        // line.positionCount = 0;
+        // line.useWorldSpace = true;
+        // line.sortingLayerName = "UI";
+        // line.sortingOrder     = 10;
 
         _built = true; // 继续可玩
     }

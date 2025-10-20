@@ -1,10 +1,12 @@
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 public class NodeView : MonoBehaviour
 {
     [Header("Refs")]
-    public Image icon;  // 放节点图片（UI Image）
+    public Image icon;  // 节点图片（UI Image）
+    [SerializeField] private TextMeshProUGUI label; 
 
     [Header("Sprites (by type)")]
     public Sprite startSprite;
@@ -26,7 +28,14 @@ public class NodeView : MonoBehaviour
     public void Setup(NodeType type)
     {
         _type = type;
-        _visited = false;
+        _visited = false; 
+        // —— 显示标签 —— //
+        if (label != null)
+        {
+            if (type == NodeType.Start) label.text = "START";
+            else if (type == NodeType.End) label.text = "END";
+            else label.text = ""; // 普通节点不显示
+        }
         ApplyUnvisitedSprite();
     }
 
