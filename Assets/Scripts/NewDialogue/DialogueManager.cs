@@ -6,14 +6,17 @@ using TMPro;
 public class DialogueManager : Singleton<DialogueManager>
 {
     [Header("UI 引用")]
-    [SerializeField] private GameObject rootPanel; 
-    [SerializeField] private Image profileImage; 
-    [SerializeField] private GameObject namePanel; 
-    [SerializeField] private TextMeshProUGUI nameText; 
-    [SerializeField] private GameObject dialoguePanel; 
-    [SerializeField] private TextMeshProUGUI dialogueText; 
-    [SerializeField] private Button continueButton; 
-    [SerializeField] private GameObject choicesPanel; 
+    [SerializeField] private Image backgroundImage;
+    [SerializeField] private Sprite nightSprite;
+    [SerializeField] public Sprite daySprite;
+    [SerializeField] public GameObject rootPanel;
+    [SerializeField] private Image profileImage;
+    [SerializeField] private GameObject namePanel;
+    [SerializeField] private TextMeshProUGUI nameText;
+    [SerializeField] private GameObject dialoguePanel;
+    [SerializeField] private TextMeshProUGUI dialogueText;
+    [SerializeField] private Button continueButton;
+    [SerializeField] private GameObject choicesPanel;
     [SerializeField] private GameObject choiceButtonPrefab;
 
     [SerializeField] private GameObject dayGamePanel;   // 小游戏panel（只显示UI，不连逻辑）
@@ -148,7 +151,7 @@ public class DialogueManager : Singleton<DialogueManager>
         if (currentDialogue.minigameData != null &&
             currentLineIndex == currentDialogue.specificLineIndex)
         {
-            Debug.Log($"[Dialogue] Hit minigame trigger. line={currentLineIndex}, specific={currentDialogue.specificLineIndex}, hasData={(currentDialogue.minigameData!=null)}");
+            Debug.Log($"[Dialogue] Hit minigame trigger. line={currentLineIndex}, specific={currentDialogue.specificLineIndex}, hasData={(currentDialogue.minigameData != null)}");
 
             continueButton.gameObject.SetActive(false);
 
@@ -180,7 +183,7 @@ public class DialogueManager : Singleton<DialogueManager>
         }
         else
         {
-            Debug.Log($"[Dialogue] Not trigger: line={currentLineIndex}, specific={currentDialogue.specificLineIndex}, hasData={(currentDialogue.minigameData!=null)}");
+            Debug.Log($"[Dialogue] Not trigger: line={currentLineIndex}, specific={currentDialogue.specificLineIndex}, hasData={(currentDialogue.minigameData != null)}");
         }
     }
 
@@ -204,7 +207,7 @@ public class DialogueManager : Singleton<DialogueManager>
         {
             RectTransform rt = dayGamePanel.GetComponent<RectTransform>();
             Vector2 startPos = rt.anchoredPosition;
-            Vector2 endPos   = new Vector2(250, startPos.y);
+            Vector2 endPos = new Vector2(250, startPos.y);
             float duration = 0.5f, t = 0f;
 
             while (t < duration)
@@ -280,7 +283,7 @@ public class DialogueManager : Singleton<DialogueManager>
     {
         RectTransform rt = dayGamePanel.GetComponent<RectTransform>();
         Vector2 startPos = rt.anchoredPosition;
-        Vector2 endPos   = new Vector2(70, startPos.y);
+        Vector2 endPos = new Vector2(70, startPos.y);
         float duration = 0.5f, t = 0f;
 
         rt.anchoredPosition = new Vector2(250, startPos.y);
@@ -306,7 +309,7 @@ public class DialogueManager : Singleton<DialogueManager>
 
         RectTransform rt = dayGamePanel.GetComponent<RectTransform>();
         Vector2 startPos = rt.anchoredPosition;
-        Vector2 endPos   = new Vector2(250, startPos.y);
+        Vector2 endPos = new Vector2(250, startPos.y);
         float duration = 0.5f, t = 0f;
 
         while (t < duration)
@@ -369,8 +372,47 @@ public class DialogueManager : Singleton<DialogueManager>
 
     public void EndToday()
     {
+        // 只隐藏这些UI
+        profileImage.gameObject.SetActive(false);
+        namePanel.SetActive(false);
+        dialoguePanel.SetActive(false);
         choicesPanel.SetActive(false);
-        rootPanel.SetActive(false);
+
+        // 开始转场特效
+        StartCoroutine(BackgroundTransitionEffect(nightSprite, 1f));
+    }
+
+    public IEnumerator BackgroundTransitionEffect(Sprite targetSprite, float duration = 1f)
+    {
+        // 1. 渐隐
+        float t = 0f;
+        Color c = backgroundImage.color;
+
+        while (t < duration)
+        {
+            t += Time.deltaTime;
+            c.a = Mathf.Lerp(1f, 0f, t / duration);
+            backgroundImage.color = c;
+            yield return null;
+        }
+        c.a = 0f;
+        backgroundImage.color = c;
+
+        // 2. 更换背景图
+        if (targetSprite != null)
+            backgroundImage.sprite = targetSprite;
+
+        // 3. 渐显
+        t = 0f;
+        while (t < duration)
+        {
+            t += Time.deltaTime;
+            c.a = Mathf.Lerp(0f, 1f, t / duration);
+            backgroundImage.color = c;
+            yield return null;
+        }
+        c.a = 1f;
+        backgroundImage.color = c;
     }
 
     // 头像切换动效（原样保留）

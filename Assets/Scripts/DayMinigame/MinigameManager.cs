@@ -30,13 +30,13 @@ public class MinigameManager : Singleton<MinigameManager>
     // public LineRenderer linePrefab;
     // public Transform   linesParent;
     public float snapPixelRadius = 40f;
-    public float margin          = 80f;
+    public float margin = 80f;
     public Color lineColor = Color.white;
-    
+
     // New Line
     [Header("UI Line (instead of LineRenderer)")]
     public Sprite lineSprite;        // 拖入线段美术
-    public float  lineThickness = 8; // UI像素厚度
+    public float lineThickness = 8; // UI像素厚度
     public Transform linesParent;    // 已有：Board 下的 Lines
 
     // 运行时(New Line)
@@ -46,9 +46,9 @@ public class MinigameManager : Singleton<MinigameManager>
 
     // 运行时
     NodeView[,] views;
-    List<NodeCoord> path      = new();
+    List<NodeCoord> path = new();
     HashSet<NodeCoord> visited = new();
-    HashSet<UEdge> usedEdges   = new();    // 用过的无向边 => “不可交叉、不可重复走同一段”
+    HashSet<UEdge> usedEdges = new();    // 用过的无向边 => “不可交叉、不可重复走同一段”
     LineRenderer line;
 
     bool _built = false;
@@ -57,18 +57,18 @@ public class MinigameManager : Singleton<MinigameManager>
     int countA, countB, countC;
 
     // 结果回调：把 [A,B,C] 发给外部（对话/剧情）
-    public System.Action<int,int,int> OnFinished;
+    public System.Action<int, int, int> OnFinished;
 
     void Start()
     {
         if (!level || !board || !nodeViewPrefab || !linesParent || !nodesParent)
         {
-            Debug.LogError("[Minigame] Inspector 引用未绑定完整。");
+            //Debug.LogError("[Minigame] Inspector 引用未绑定完整。");
             enabled = false; return;
         }
         // 分屏后再 InitIfNeeded；这里不自动生成
-        foreach (Transform t in nodesParent)  Destroy(t.gameObject);
-        foreach (Transform t in linesParent)  Destroy(t.gameObject);
+        foreach (Transform t in nodesParent) Destroy(t.gameObject);
+        foreach (Transform t in linesParent) Destroy(t.gameObject);
     }
 
     // 对外：分屏后调用一次
@@ -99,18 +99,18 @@ public class MinigameManager : Singleton<MinigameManager>
 
         // 生成节点
         for (int r = 0; r < level.rows; r++)
-        for (int c = 0; c < level.cols; c++)
-        {
-            var go = Instantiate(nodeViewPrefab, nodesParent);
-            var v  = go.GetComponent<NodeView>();
-            var n  = new NodeCoord(r, c);
+            for (int c = 0; c < level.cols; c++)
+            {
+                var go = Instantiate(nodeViewPrefab, nodesParent);
+                var v = go.GetComponent<NodeView>();
+                var n = new NodeCoord(r, c);
 
-            v.Setup(level.GetNodeType(n));
-            ((RectTransform)go.transform).anchoredPosition = GridToLocal(n);
-            views[r, c] = v;
-        }
+                v.Setup(level.GetNodeType(n));
+                ((RectTransform)go.transform).anchoredPosition = GridToLocal(n);
+                views[r, c] = v;
+            }
 
-        Debug.Log("[Minigame] Build ok (UI lines).");
+        //Debug.Log("[Minigame] Build ok (UI lines).");
     }
 
     // —— 输入 —— //
@@ -188,12 +188,12 @@ public class MinigameManager : Singleton<MinigameManager>
         float snapLocalRadius = snapPixelRadius / (canvas ? canvas.scaleFactor : 1f);
 
         for (int r = 0; r < level.rows; r++)
-        for (int c = 0; c < level.cols; c++)
-        {
-            var n = new NodeCoord(r, c);
-            float d = Vector2.Distance(mouseLocal, GridToLocal(n));
-            if (d < best && d <= snapLocalRadius) { best = d; nearest = n; }
-        }
+            for (int c = 0; c < level.cols; c++)
+            {
+                var n = new NodeCoord(r, c);
+                float d = Vector2.Distance(mouseLocal, GridToLocal(n));
+                if (d < best && d <= snapLocalRadius) { best = d; nearest = n; }
+            }
         return best < float.MaxValue;
     }
 
@@ -253,7 +253,7 @@ public class MinigameManager : Singleton<MinigameManager>
         go.transform.SetParent(linesParent, false);
         var img = go.GetComponent<UnityEngine.UI.Image>();
         img.sprite = lineSprite;
-        img.type   = UnityEngine.UI.Image.Type.Sliced; // 9-slice
+        img.type = UnityEngine.UI.Image.Type.Sliced; // 9-slice
 
         var segRT = go.GetComponent<RectTransform>();
         segRT.pivot = new Vector2(0.5f, 0.5f);
@@ -287,7 +287,7 @@ public class MinigameManager : Singleton<MinigameManager>
         seg.SetParent(linesParent, false);
         seg.anchoredPosition = mid;
         seg.sizeDelta = new Vector2(len, lineThickness);
-        seg.localRotation = Quaternion.Euler(0,0,ang);
+        seg.localRotation = Quaternion.Euler(0, 0, ang);
     }
 
     public void ResetLevel()

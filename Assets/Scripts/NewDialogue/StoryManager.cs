@@ -1,6 +1,8 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+
 public class StoryManager : Singleton<StoryManager>
 {
     [SerializeField] private List<DialogueData> day0Dialogues = new List<DialogueData>();
@@ -11,11 +13,11 @@ public class StoryManager : Singleton<StoryManager>
     [SerializeField] private List<DialogueData> day5Dialogues = new List<DialogueData>();
 
     private List<DialogueData> currentDayDialogue = new List<DialogueData>();
-    private int currentDay = 0;
+    public int currentDay = 0;
     private int currentDialogueIndex = 0;
 
     [Header("开始hacker游戏的按钮")]
-    [SerializeField] private Button StartButton; // 开始按钮
+    [SerializeField] public Button StartButton; // 开始按钮
 
     [Header("Minigame")]
     [SerializeField] private MinigameManager minigame;   // 拖场景中的 MinigameManager
@@ -23,9 +25,21 @@ public class StoryManager : Singleton<StoryManager>
 
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Space))
+        if (Input.GetKeyDown(KeyCode.Alpha0))
+        {
+            StartDay(0);
+            StartButton.gameObject.SetActive(false);
+        }
+
+        if (Input.GetKeyDown(KeyCode.Alpha1))
         {
             StartDay(1);
+            StartButton.gameObject.SetActive(false);
+        }
+
+        if (Input.GetKeyDown(KeyCode.Alpha2))
+        {
+            StartDay(2);
             StartButton.gameObject.SetActive(false);
         }
     }
@@ -49,7 +63,7 @@ public class StoryManager : Singleton<StoryManager>
         // 进入剧情时，生成接线小游戏
         if (buildMinigameOnDayStart && minigame != null)
         {
-            minigame.InitIfNeeded(); 
+            minigame.InitIfNeeded();
             minigame.gameObject.SetActive(true);
         }
 
@@ -72,8 +86,16 @@ public class StoryManager : Singleton<StoryManager>
     {
         if (wasOver)
         {
-            DialogueManager.Instance.EndToday();
-            StartButton.gameObject.SetActive(true);
+            if (currentDay == 0)
+            {
+                currentDay = currentDay + 1;
+                StartDay(currentDay);
+            }
+            else
+            {
+                DialogueManager.Instance.EndToday();
+                StartCoroutine(FadeInButton(StartButton, 1f));
+            }
         }
         else
         {
@@ -81,5 +103,24 @@ public class StoryManager : Singleton<StoryManager>
         }
     }
 
-    
+    private IEnumerator FadeInButton(Button btn, float duration = 1f)
+    {
+        CanvasGroup cg = btn.GetComponent<CanvasGroup>();
+        if (cg == null)
+            cg = btn.gameObject.AddComponent<CanvasGroup>();
+
+        cg.alpha = 0f;
+        btn.gameObject.SetActive(true);
+
+        float t = 0f;
+        while (t < duration)
+        {
+            t += Time.deltaTime;
+            cg.alpha = Mathf.Lerp(0f, 1f, t / duration);
+            yield return null;
+        }
+        cg.alpha = 1f;
+    }
+
+
 }

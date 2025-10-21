@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -14,6 +15,12 @@ public class GameManager : Singleton<GameManager>
     {
         if (scene.name == "Game")//场景检测
         {
+            DialogueManager.Instance.rootPanel.SetActive(false);
+
+            // 隐藏开始按钮
+            if (StoryManager.Instance != null && StoryManager.Instance.StartButton != null)
+                StoryManager.Instance.StartButton.gameObject.SetActive(false);
+
             mineralsThisSession = 0;
 
             if (UIManager.Instance != null)
@@ -26,7 +33,23 @@ public class GameManager : Singleton<GameManager>
                 MeteoriteManager.Instance.StartSpawning();
             }
         }
+
+        if (scene.name == "Clinic_Day")
+        {
+            DialogueManager.Instance.rootPanel.SetActive(true);
+            StartCoroutine(DelayStartDay());
+        }
     }
+
+
+    private IEnumerator DelayStartDay()
+    {
+        yield return null; // 等待一帧
+        StoryManager.Instance.StartDay(StoryManager.Instance.currentDay);
+        var dm = DialogueManager.Instance;
+        dm.StartCoroutine(dm.BackgroundTransitionEffect(dm.daySprite, 1f));
+    }
+
 
     //捡起矿物
     public void AddMineral(int amount)
@@ -56,6 +79,7 @@ public class GameManager : Singleton<GameManager>
         PlayerPrefs.Save();
         //Debug.Log("游戏结束！本局获得: " + mineralsThisSession + " | 新的总矿物数: " + totalMinerals);
 
-        SceneManager.LoadScene("MainMenu");
+        StoryManager.Instance.currentDay = StoryManager.Instance.currentDay + 1;
+        SceneManager.LoadScene("Clinic_Day");
     }
 }
