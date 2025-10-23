@@ -1,5 +1,8 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
+using System.Collections;
+using TMPro;
 
 public enum NodeType { Start, End, Normal, BonusA, BonusB, BonusC }
 
@@ -42,7 +45,17 @@ public class MinigameManager : Singleton<MinigameManager>
     // 运行时(New Line)
     readonly List<RectTransform> _segments = new();  // 当前已画的线段
     readonly Stack<RectTransform> _pool = new();     // 复用池
-    RectTransform _preview;                           // 预览线段（鼠标/手指悬停时）    
+    RectTransform _preview;                           // 预览线段（鼠标/手指悬停时
+
+    [Header("UI - Help")]
+    [SerializeField] private GameObject howToPlayPanel; 
+    [SerializeField] private CanvasGroup helpCanvasGroup;
+    private Coroutine helpFadeRoutine;
+    public TextMeshProUGUI helpText;  // 在 Inspector 里拖入
+
+
+    private bool helpVisible = false;
+
 
     // 运行时
     NodeView[,] views;
@@ -69,6 +82,45 @@ public class MinigameManager : Singleton<MinigameManager>
         // 分屏后再 InitIfNeeded；这里不自动生成
         foreach (Transform t in nodesParent) Destroy(t.gameObject);
         foreach (Transform t in linesParent) Destroy(t.gameObject);
+        if (helpText != null)
+        {
+            // helpText.text =
+            //     "<b><size=120%>Treatment Objective</size></b>\n" +
+            //     "• You are rewiring the patient’s neural interface.\n" +
+            //     "• Start from the <color=#00FFFF><b>Initiation Node</b></color> and connect to the <color=#FF00FF><b>Terminal Node</b></color>.\n" +
+            //     "• Paths cannot overlap or be reused.\n" +
+            //     "• Reaching <color=#FFD700>yellow enhancement chips</color> can help recover lost cognitive functions.\n\n" +
+            //     "<b><size=115%>Controls</size></b>\n" +
+            //     "• Click or drag to connect adjacent nodes.\n" +
+            //     "• Press <b>R</b> to reset wiring.\n" +
+            //     "• Press <b>Tab / G</b> to toggle this help.";
+            helpText.text =
+                "<size=120%><b>Treatment Objective:</b></size>\n" +
+                "• You're reconnecting the patient's <b><color=#00FFFF>brain-machine interface</color></b>.\n" +
+                "• Start from the <b><color=#00FFFF>entry chip    </color></b> and link the signal path to the <b><color=#FF00FF>exit chip    </color></b>.\n" +
+                "• Each <b>neural path</b> can only be activated once. <b>Signal lines</b> cannot cross.\n" +
+                "• Connecting <b><color=#FFD700>yellow neural chips</color></b>          during the process helps restore lost brain functions.\n\n" +
+
+                "<size=120%><b>Controls:</b></size>\n" +
+                "• <b>Click or drag</b> to connect adjacent nodes.\n" +
+                "• Press <b><color=#00FFAA>R</color></b> to reset the interface.\n" +
+                "• Press <b><color=#00FFAA>G</color></b> or <b><color=#00FFAA>Tab</color></b> to show/hide this Surgical Guidelines.";
+        }
+        if (howToPlayPanel != null)
+        howToPlayPanel.SetActive(false);  // 默认隐藏帮助说明
+    }
+
+    public void InitLevel(LevelSO dynamicLevel)
+    {
+        if (!dynamicLevel)
+        {
+            Debug.LogError("[Minigame] 传入的 LevelSO 为 null");
+            return;
+        }
+
+        level = dynamicLevel;
+        _built = false;  // 标记为未构建，允许重建
+        InitIfNeeded();  // 走原来的生成逻辑
     }
 
     // 对外：分屏后调用一次
@@ -120,6 +172,18 @@ public class MinigameManager : Singleton<MinigameManager>
 
         // R 键全重置
         if (Input.GetKeyDown(KeyCode.R)) { ResetLevel(); return; }
+
+        // 帮助界面
+        if (Input.GetKeyDown(KeyCode.G) || Input.GetKeyDown(KeyCode.Tab))
+        {
+            helpVisible = !helpVisible;
+            if (helpFadeRoutine != null) StopCoroutine(helpFadeRoutine);
+            helpFadeRoutine = StartCoroutine(FadeHelpPanel(helpVisible));
+        }
+
+        // 若打开了帮助界面，暂停其它输入
+        if (helpVisible) return;
+    
 
         // 鼠标/触控一次“步进”逻辑（支持点击或按住拖过邻格）
         if (Input.GetMouseButton(0) || Input.GetMouseButtonDown(0))
@@ -317,5 +381,41 @@ public class MinigameManager : Singleton<MinigameManager>
         // line.sortingOrder     = 10;
 
         _built = true; // 继续可玩
+    }
+
+    public void CloseHelpPanel()
+    {
+        if (helpVisible)
+        {
+            helpVisible = false;
+            if (helpFadeRoutine != null) StopCoroutine(helpFadeRoutine);
+            helpFadeRoutine = StartCoroutine(FadeHelpPanel(false));
+        }
+    }
+
+    private IEnumerator FadeHelpPanel(bool show)
+    {
+        float duration = 0.3f;
+        float startAlpha = helpCanvasGroup.alpha;
+        float endAlpha = show ? 1f : 0f;
+
+        if (show) helpCanvasGroup.gameObject.SetActive(true);
+        helpCanvasGroup.interactable = false;
+        helpCanvasGroup.blocksRaycasts = false;
+
+        float t = 0f;
+        while (t < duration)
+        {
+            t += Time.deltaTime;
+            float alpha = Mathf.Lerp(startAlpha, endAlpha, t / duration);
+            helpCanvasGroup.alpha = alpha;
+            yield return null;
+        }
+
+        helpCanvasGroup.alpha = endAlpha;
+        helpCanvasGroup.interactable = show;
+        helpCanvasGroup.blocksRaycasts = show;
+
+        if (!show) helpCanvasGroup.gameObject.SetActive(false);
     }
 }

@@ -29,7 +29,7 @@ public class DialogueData : ScriptableObject
     public string[] choices; // 选项内容
 
     // 小游戏相关数据（可扩展）
-    public ScriptableObject minigameData;
+    public LevelSO minigameData;
 
     [Header("在这一天的最后一个对话的data中将其设为true")]
     public bool isOver; // 是否是这一天剧情的结束

@@ -173,8 +173,11 @@ public class DialogueManager : Singleton<DialogueManager>
                 MinigameManager.Instance.OnFinished += HandleMinigameFinished;
 
                 MinigameManager.Instance.gameObject.SetActive(true);
-                MinigameManager.Instance.InitIfNeeded();
-                Debug.Log("[Dialogue] Minigame inited.");
+
+                // 用对话中的 minigameData 初始化小游戏（动态加载关卡）
+                MinigameManager.Instance.InitLevel(currentDialogue.minigameData);
+
+                Debug.Log("[Dialogue] Minigame inited with dynamic level.");
             }
             else
             {

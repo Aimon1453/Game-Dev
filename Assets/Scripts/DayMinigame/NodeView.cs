@@ -30,12 +30,12 @@ public class NodeView : MonoBehaviour
         _type = type;
         _visited = false; 
         // —— 显示标签 —— //
-        if (label != null)
-        {
-            if (type == NodeType.Start) label.text = "START";
-            else if (type == NodeType.End) label.text = "END";
-            else label.text = ""; // 普通节点不显示
-        }
+        // if (label != null)
+        // {
+        //     if (type == NodeType.Start) label.text = "START";
+        //     else if (type == NodeType.End) label.text = "END";
+        //     else label.text = ""; // 普通节点不显示
+        // }
         ApplyUnvisitedSprite();
     }
 
