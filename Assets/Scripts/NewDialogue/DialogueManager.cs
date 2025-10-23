@@ -91,7 +91,7 @@ public class DialogueManager : Singleton<DialogueManager>
             {
                 profileImage.sprite = currentDialogue.profile;
                 profileImage.SetNativeSize();
-                profileImage.rectTransform.sizeDelta *= 0.3f;
+                profileImage.rectTransform.sizeDelta *= 0.25f;
                 profileImage.gameObject.SetActive(true);
                 profileImage.color = Color.white;
             }
@@ -433,7 +433,7 @@ public class DialogueManager : Singleton<DialogueManager>
         {
             profileImage.sprite = newProfile;
             profileImage.SetNativeSize();
-            profileImage.rectTransform.sizeDelta *= 0.3f;
+            profileImage.rectTransform.sizeDelta *= 0.25f;
             profileImage.gameObject.SetActive(true);
         }
         else
