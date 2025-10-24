@@ -38,6 +38,7 @@ public class GameManager : Singleton<GameManager>
         {
             DialogueManager.Instance.rootPanel.SetActive(true);
             StartCoroutine(DelayStartDay());
+            //Debug.Log("进入Clinic_Day场景，开始当天剧情");
         }
     }
 
@@ -46,8 +47,8 @@ public class GameManager : Singleton<GameManager>
     {
         yield return null; // 等待一帧
         StoryManager.Instance.StartDay(StoryManager.Instance.currentDay);
-        var dm = DialogueManager.Instance;
-        dm.StartCoroutine(dm.BackgroundTransitionEffect(dm.daySprite, 1f));
+        //var dm = DialogueManager.Instance;
+        //dm.StartCoroutine(dm.BackgroundTransitionEffect(dm.daySprite, 1f));
     }
 
 
@@ -66,6 +67,7 @@ public class GameManager : Singleton<GameManager>
     //游戏结束时，结算全部的资源
     public void EndGame()
     {
+        //Debug.Log("GameManager回调结束游戏");
         MeteoriteManager.Instance.StopSpawning();//停止生成陨石
 
         if (ObjectPool.Instance != null)
@@ -80,6 +82,12 @@ public class GameManager : Singleton<GameManager>
         //Debug.Log("游戏结束！本局获得: " + mineralsThisSession + " | 新的总矿物数: " + totalMinerals);
 
         StoryManager.Instance.currentDay = StoryManager.Instance.currentDay + 1;
+        //Debug.Log("推进到第 " + StoryManager.Instance.currentDay + " 天");
         SceneManager.LoadScene("Clinic_Day");
+    }
+
+    void OnDestroy()
+    {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
     }
 }

@@ -111,6 +111,7 @@ public class StoryManager : Singleton<StoryManager>
             }
             else
             {
+                Debug.Log("当天剧情结束");
                 DialogueManager.Instance.EndToday();
                 StartCoroutine(FadeInButton(StartButton, 1f));
             }

@@ -363,6 +363,15 @@ public class DialogueManager : Singleton<DialogueManager>
         }
         else
         {
+            // 判断下一行是否是分支标签
+            int nextIndex = currentLineIndex + 1;
+            if (nextIndex < currentDialogue.dialogueLines.Length &&
+                currentDialogue.dialogueLines[nextIndex] != null &&
+                currentDialogue.dialogueLines[nextIndex].StartsWith("choice"))
+            {
+                // 下一行是分支标签，直接return，不响应
+                return;
+            }
             currentLineIndex++;
             DisplayCurrentLine();
         }
@@ -382,7 +391,7 @@ public class DialogueManager : Singleton<DialogueManager>
         choicesPanel.SetActive(false);
 
         // 开始转场特效
-        StartCoroutine(BackgroundTransitionEffect(nightSprite, 1f));
+        //StartCoroutine(BackgroundTransitionEffect(nightSprite, 1f));
     }
 
     public IEnumerator BackgroundTransitionEffect(Sprite targetSprite, float duration = 1f)

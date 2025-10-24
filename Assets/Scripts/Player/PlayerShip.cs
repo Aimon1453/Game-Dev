@@ -140,6 +140,7 @@ public class PlayerShip : MonoBehaviour, IDamageable
 
         if (GameManager.Instance != null)
         {
+            //Debug.Log("玩家死亡");
             GameManager.Instance.EndGame();
         }
     }
