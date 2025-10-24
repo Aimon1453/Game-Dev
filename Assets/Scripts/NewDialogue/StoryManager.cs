@@ -42,6 +42,24 @@ public class StoryManager : Singleton<StoryManager>
             StartDay(2);
             StartButton.gameObject.SetActive(false);
         }
+
+        if (Input.GetKeyDown(KeyCode.Alpha3))
+        {
+            StartDay(3);
+            StartButton.gameObject.SetActive(false);
+        }
+
+        if (Input.GetKeyDown(KeyCode.Alpha4))
+        {
+            StartDay(4);
+            StartButton.gameObject.SetActive(false);
+        }
+
+        if (Input.GetKeyDown(KeyCode.Alpha5))
+        {
+            StartDay(5);
+            StartButton.gameObject.SetActive(false);
+        }
     }
 
     public void StartDay(int day)
