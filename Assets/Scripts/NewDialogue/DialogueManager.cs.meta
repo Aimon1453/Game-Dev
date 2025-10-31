@@ -1,0 +1,25 @@
+fileFormatVersion: 2
+guid: 320337088ab08de4ab08ef1989ab701f
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - backgroundImage: {instanceID: 0}
+  - nightSprite: {instanceID: 0}
+  - daySprite: {instanceID: 0}
+  - rootPanel: {instanceID: 0}
+  - profileImage: {instanceID: 0}
+  - namePanel: {instanceID: 0}
+  - nameText: {instanceID: 0}
+  - dialoguePanel: {instanceID: 0}
+  - dialogueText: {instanceID: 0}
+  - continueButton: {instanceID: 0}
+  - choicesPanel: {instanceID: 0}
+  - choiceButtonPrefab: {instanceID: 0}
+  - dayGamePanel: {instanceID: 0}
+  - minigame: {instanceID: 0}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
