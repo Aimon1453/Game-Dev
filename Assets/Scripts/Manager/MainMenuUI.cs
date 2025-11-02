@@ -16,6 +16,12 @@ public class MainMenuUI : MonoBehaviour
         SceneManager.LoadScene("Clinic_Day");
     }
 
+    public void QuitGame()
+    {
+        //Debug.Log("退出游戏");
+        Application.Quit();
+    }
+
     public void StartNightGame()
     {
         SceneManager.LoadScene("Game");

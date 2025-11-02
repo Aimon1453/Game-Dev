@@ -77,6 +77,10 @@ public class StoryManager : Singleton<StoryManager>
             case 5: currentDayDialogue = day5Dialogues; break;
             default: currentDayDialogue = day0Dialogues; break;
         }
+        if (currentDay == 5)
+        {
+            Debug.Log("最后一天剧情开始");
+        }
 
         // 进入剧情时，生成接线小游戏
         if (buildMinigameOnDayStart && minigame != null)
@@ -87,14 +91,23 @@ public class StoryManager : Singleton<StoryManager>
 
         if (currentDayDialogue.Count > 0)
         {
+            if (currentDay == 5)
+            {
+                Debug.Log("第五天剧情开始");
+            }
             DialogueManager.Instance.StartDialogue(GetNextDialogue());
         }
     }
 
     public DialogueData GetNextDialogue()
     {
+
         if (currentDialogueIndex < currentDayDialogue.Count)
         {
+            if (currentDay == 5)
+            {
+                Debug.Log("获取第五天的对话数据");
+            }
             return currentDayDialogue[currentDialogueIndex++];
         }
         return null;
@@ -108,6 +121,12 @@ public class StoryManager : Singleton<StoryManager>
             {
                 currentDay = currentDay + 1;
                 StartDay(currentDay);
+            }
+            else if (currentDay == 5)
+            {
+                Debug.Log("第五天剧情结束，游戏结束");
+                // 游戏结束逻辑
+                GameManager.Instance.OverGame();
             }
             else
             {

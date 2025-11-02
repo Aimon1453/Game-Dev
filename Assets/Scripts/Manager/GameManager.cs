@@ -85,6 +85,15 @@ public class GameManager : Singleton<GameManager>
         //Debug.Log("推进到第 " + StoryManager.Instance.currentDay + " 天");
         SceneManager.LoadScene("Clinic_Day");
     }
+    public void OverGame()
+    {
+        Debug.Log("游戏彻底结束，返回主菜单");
+        SceneManager.LoadScene("MainMenu");
+        DialogueManager.Instance.rootPanel.SetActive(false);
+        StoryManager.Instance.currentDay = 0;
+    }
+
+
 
     void OnDestroy()
     {

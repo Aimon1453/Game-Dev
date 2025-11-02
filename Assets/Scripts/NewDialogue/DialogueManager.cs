@@ -65,6 +65,8 @@ public class DialogueManager : Singleton<DialogueManager>
         currentDialogue = dialogueData;
 
         rootPanel.SetActive(true);
+        dialoguePanel.SetActive(true);
+        namePanel.SetActive(true);
         choicesPanel.SetActive(false);
 
         nameText.text = currentDialogue.speakerName;
